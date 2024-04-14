@@ -4,7 +4,7 @@ ifeq ($(findstring MINGW64,$(shell uname -s)),MINGW64)
 else
   PWD=$(shell pwd)
 endif
-MCL_DIR?=$(PWD)/../mcl
+MCL_DIR?=$(PWD)/../zippymcl
 include $(MCL_DIR)/common.mk
 LIB_DIR=lib
 OBJ_DIR=obj
@@ -111,20 +111,20 @@ else
   LIBPATH_KEY=LD_LIBRARY_PATH
 endif
 test_ci: $(TEST_EXE)
-	@sh -ec 'for i in $(TEST_EXE); do echo $$i; env PATH=$$PATH:../mcl/lib $(LIBPATH_KEY)=../mcl/lib LSAN_OPTIONS=verbosity=1 log_threads=1 $$i; done'
+	@sh -ec 'for i in $(TEST_EXE); do echo $$i; env PATH=$$PATH:../zippymcl/lib $(LIBPATH_KEY)=../zippymcl/lib LSAN_OPTIONS=verbosity=1 log_threads=1 $$i; done'
 	$(MAKE) sample_test
 
 test: $(TEST_EXE)
 	@echo test $(TEST_EXE)
-	@sh -ec 'for i in $(TEST_EXE); do env PATH=$$PATH:../mcl/lib $(LIBPATH_KEY)=../mcl/lib $$i|grep "ctest:name"; done' > result.txt
+	@sh -ec 'for i in $(TEST_EXE); do env PATH=$$PATH:../zippymcl/lib $(LIBPATH_KEY)=../zippymcl/lib $$i|grep "ctest:name"; done' > result.txt
 	@grep -v "ng=0, exception=0" result.txt; if [ $$? -eq 1 ]; then echo "all unit tests succeed"; else exit 1; fi
 	$(MAKE) sample_test
 
 sample_test: $(EXE_DIR)/bls_smpl.exe
-	env PATH=$$PATH:../mcl/lib $(LIBPATH_KEY)=../mcl/lib python bls_smpl.py
+	env PATH=$$PATH:../zippymcl/lib $(LIBPATH_KEY)=../zippymcl/lib python bls_smpl.py
 
 # PATH is for mingw, LD_LIBRARY_PATH is for linux, DYLD_LIBRARY_PATH is for mac
-COMMON_LIB_PATH="../../../lib:../../../../mcl/lib"
+COMMON_LIB_PATH="../../../lib:../../../../zippymcl/lib"
 PATH_VAL=$$PATH:$(COMMON_LIB_PATH) LD_LIBRARY_PATH=$(COMMON_LIB_PATH) DYLD_LIBRARY_PATH=$(COMMON_LIB_PATH) CGO_LDFLAGS="-L../../../lib" CGO_CFLAGS="-I$(PWD)/include -I$(MCL_DIR)/include"
 $(info $$PATH_VAL is [${PATH_VAL}])
 test_go256: ffi/go/bls/bls.go ffi/go/bls/bls_test.go $(BLS256_SLIB)
@@ -150,16 +150,16 @@ test_go_swapg:
 	$(MAKE) test_go384_swapg
 	$(MAKE) test_go384_256_swapg
 
-EMCC_OPT=-I./include -I./src -I../mcl/include -I./ -Wall -Wextra
+EMCC_OPT=-I./include -I./src -I../zippymcl/include -I./ -Wall -Wextra
 EMCC_OPT+=-O3 -DNDEBUG
 EMCC_OPT+=-s WASM=1 -s NO_EXIT_RUNTIME=1 -s MODULARIZE=1 #-s ASSERTIONS=1
 EMCC_OPT+=-DCYBOZU_MINIMUM_EXCEPTION
 EMCC_OPT+=-s ABORTING_MALLOC=0
 EMCC_OPT+=-DMCLBN_FP_UNIT_SIZE=6
-JS_DEP=src/bls_c384.cpp ../mcl/src/fp.cpp Makefile
+JS_DEP=src/bls_c384.cpp ../zippymcl/src/fp.cpp Makefile
 
 ../bls-wasm/bls_c.js: $(JS_DEP)
-	emcc -o $@ src/bls_c384.cpp ../mcl/src/fp.cpp $(EMCC_OPT) -DMCL_MAX_BIT_SIZE=384 -DMCL_USE_WEB_CRYPTO_API -s DISABLE_EXCEPTION_CATCHING=1 -DCYBOZU_DONT_USE_EXCEPTION -DCYBOZU_DONT_USE_STRING -DMCL_DONT_USE_CSPRNG -fno-exceptions -MD -MP -MF obj/bls_c384.d
+	emcc -o $@ src/bls_c384.cpp ../zippymcl/src/fp.cpp $(EMCC_OPT) -DMCL_MAX_BIT_SIZE=384 -DMCL_USE_WEB_CRYPTO_API -s DISABLE_EXCEPTION_CATCHING=1 -DCYBOZU_DONT_USE_EXCEPTION -DCYBOZU_DONT_USE_STRING -DMCL_DONT_USE_CSPRNG -fno-exceptions -MD -MP -MF obj/bls_c384.d
 
 bls-wasm:
 	$(MAKE) ../bls-wasm/bls_c.js
@@ -172,7 +172,7 @@ PLATFORM?="iPhoneOS"
 IOS_MIN_VERSION?=7.0
 IOS_CFLAGS=-fembed-bitcode -fno-common -DPIC -fPIC -Dmcl_EXPORTS
 IOS_CFLAGS+=-DMCL_USE_VINT -DMCL_VINT_FIXED_BUFFER -DMCL_DONT_USE_OPENSSL -DMCL_DONT_USE_XBYAK -DMCL_LLVM_BMI2=0 -DMCL_USE_LLVM=1 -DMCL_SIZEOF_UNIT=8 -I ./include -std=c++11 -Wall -Wextra -Wformat=2 -Wcast-qual -Wcast-align -Wwrite-strings -Wfloat-equal -Wpointer-arith -O3 -DNDEBUG
-IOS_CFLAGS+=-I../mcl/include
+IOS_CFLAGS+=-I../zippymcl/include
 IOS_LDFLAGS=-dynamiclib -Wl,-flat_namespace -Wl,-undefined -Wl,suppress
 CURVE_BIT?=256
 IOS_OBJS=$(IOS_OUTDIR)/fp.o $(IOS_OUTDIR)/base64.o $(IOS_OUTDIR)/bls_c$(CURVE_BIT).o
@@ -180,23 +180,23 @@ IOS_LIB=libbls$(CURVE_BIT)
 
 GOMOBILE_ARCHS=armv7 arm64 i386 x86_64
 
-../mcl/src/base64.ll:
+../zippymcl/src/base64.ll:
 	$(MAKE) -C ../mcl src/base64.ll
 
-ios: ../mcl/src/base64.ll
+ios: ../zippymcl/src/base64.ll
 	@echo "Building iOS $(ARCH)..."
 	$(eval IOS_OUTDIR=ios/$(ARCH))
 	$(eval IOS_SDK_PATH=$(XCODEPATH)/Platforms/$(PLATFORM).platform/Developer/SDKs/$(PLATFORM).sdk)
 	$(eval IOS_COMMON=-arch $(ARCH) -isysroot $(IOS_SDK_PATH) -mios-version-min=$(IOS_MIN_VERSION))
 	@$(MKDIR) $(IOS_OUTDIR)
-	$(IOS_CLANG) $(IOS_COMMON) $(IOS_CFLAGS) -c ../mcl/src/fp.cpp -o $(IOS_OUTDIR)/fp.o
-	$(IOS_CLANG) $(IOS_COMMON) $(IOS_CFLAGS) -c ../mcl/src/base64.ll -o $(IOS_OUTDIR)/base64.o
+	$(IOS_CLANG) $(IOS_COMMON) $(IOS_CFLAGS) -c ../zippymcl/src/fp.cpp -o $(IOS_OUTDIR)/fp.o
+	$(IOS_CLANG) $(IOS_COMMON) $(IOS_CFLAGS) -c ../zippymcl/src/base64.ll -o $(IOS_OUTDIR)/base64.o
 	$(IOS_CLANG) $(IOS_COMMON) $(IOS_CFLAGS) -c src/bls_c$(CURVE_BIT).cpp -o $(IOS_OUTDIR)/bls_c$(CURVE_BIT).o
 	$(IOS_CLANG) $(IOS_COMMON) $(IOS_LDFLAGS) -install_name $(XCODEPATH)/Platforms/$(PLATFORM).platform/Developer/usr/lib/$(IOS_LIB).dylib -o $(IOS_OUTDIR)/$(IOS_LIB).dylib $(IOS_OBJS)
 	ar cru $(IOS_OUTDIR)/$(IOS_LIB).a $(IOS_OBJS)
 	ranlib $(IOS_OUTDIR)/$(IOS_LIB).a
 
-gomobile: ../mcl/src/base64.ll
+gomobile: ../zippymcl/src/base64.ll
 	@for target in $(GOMOBILE_ARCHS); do \
 		if [ "$$target" == "i386" ] || [ "$$target" == "x86_64" ] ; then \
 			$(MAKE) ios ARCH=$$target PLATFORM="iPhoneSimulator"; \
@@ -207,12 +207,12 @@ gomobile: ../mcl/src/base64.ll
 	@lipo "ios/armv7/libbls$(CURVE_BIT).a"  "ios/arm64/libbls$(CURVE_BIT).a" "ios/i386/libbls$(CURVE_BIT).a" "ios/x86_64/libbls$(CURVE_BIT).a" -create -output ios/libbls$(CURVE_BIT).a
 	@lipo "ios/armv7/libbls$(CURVE_BIT).dylib"  "ios/arm64/libbls$(CURVE_BIT).dylib" "ios/i386/libbls$(CURVE_BIT).dylib" "ios/x86_64/libbls$(CURVE_BIT).dylib" -create -output lib/libbls$(CURVE_BIT).dylib
 
-MIN_CFLAGS=-O3 -DNDEBUG -fPIC -DMCL_DONT_USE_OPENSSL -DMCL_USE_VINT -DMCL_SIZEOF_UNIT=8 -DMCL_VINT_FIXED_BUFFER -DMCL_MAX_BIT_SIZE=384 -DCYBOZU_DONT_USE_EXCEPTION -DCYBOZU_DONT_USE_STRING -fno-rtti -I./include -I../mcl/include #-fno-exceptions
+MIN_CFLAGS=-O3 -DNDEBUG -fPIC -DMCL_DONT_USE_OPENSSL -DMCL_USE_VINT -DMCL_SIZEOF_UNIT=8 -DMCL_VINT_FIXED_BUFFER -DMCL_MAX_BIT_SIZE=384 -DCYBOZU_DONT_USE_EXCEPTION -DCYBOZU_DONT_USE_STRING -fno-rtti -I./include -I../zippymcl/include #-fno-exceptions
 ifeq ($(BLS_SWAP_G),1)
     MIN_CFLAGS+=-DBLS_SWAP_G
 endif
 minimised_static:
-	$(CXX) -c -o $(OBJ_DIR)/fp.o ../mcl/src/fp.cpp $(MIN_CFLAGS)
+	$(CXX) -c -o $(OBJ_DIR)/fp.o ../zippymcl/src/fp.cpp $(MIN_CFLAGS)
 	$(CXX) -c -o $(OBJ_DIR)/bls_c384_256.o src/bls_c384_256.cpp $(MIN_CFLAGS)
 	$(AR) $(LIB_DIR)/libbls384_256.a $(OBJ_DIR)/bls_c384_256.o $(OBJ_DIR)/fp.o
 

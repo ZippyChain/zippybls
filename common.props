@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)../cybozulib/include;$(SolutionDir)../cybozulib_ext/include;$(SolutionDir)include;$(SolutionDir)../mcl/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)../cybozulib/include;$(SolutionDir)../cybozulib_ext/include;$(SolutionDir)include;$(SolutionDir)../zippymcl/include</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
@@ -19,7 +19,7 @@
       <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);NOMINMAX;BLS_MAX_OP_UNIT_SIZE=6</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)../cybozulib_ext/lib;$(SolutionDir)../mcl/lib;$(SolutionDir)lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)../cybozulib_ext/lib;$(SolutionDir)../zippymcl/lib;$(SolutionDir)lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
